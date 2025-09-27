@@ -89,7 +89,7 @@ def get_queue_entry_by_ticket_number(
     return queue_entry
 
 
-@router.post("/", response_model=QueueEntrySchema)
+@router.post("/", response_model=QueueEntrySchema, status_code=status.HTTP_201_CREATED)
 def create_queue_entry(
     queue_entry: QueueEntryCreate,
     db: Session = Depends(get_db)

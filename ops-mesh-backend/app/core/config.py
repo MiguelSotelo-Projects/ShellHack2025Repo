@@ -24,6 +24,20 @@ class Settings(BaseSettings):
     # WebSocket
     websocket_path: str = "/ws"
     
+    # Google Cloud Configuration
+    google_cloud_project: Optional[str] = None
+    google_cloud_region: str = "us-central1"
+    google_application_credentials: Optional[str] = None
+    
+    # Ops Mesh Configuration
+    ops_mesh_topic_prefix: str = "ops-mesh"
+    ops_mesh_monitoring: bool = True
+    ops_mesh_logging: bool = True
+    
+    # Development Settings
+    debug: bool = False
+    reload: bool = False
+    
     class Config:
         env_file = ".env"
 

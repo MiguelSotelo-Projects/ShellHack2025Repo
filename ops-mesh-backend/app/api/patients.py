@@ -43,7 +43,7 @@ def get_patient_by_id(
     return patient
 
 
-@router.post("/", response_model=PatientSchema)
+@router.post("/", response_model=PatientSchema, status_code=status.HTTP_201_CREATED)
 def create_patient(
     patient: PatientCreate,
     db: Session = Depends(get_db)

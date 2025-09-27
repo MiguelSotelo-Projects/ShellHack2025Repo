@@ -5,7 +5,8 @@ import uvicorn
 
 from .core.config import settings
 from .core.database import engine, Base
-from .api import appointments, patients, queue, dashboard
+from .api import appointments, patients, queue, dashboard, walkin, checkin
+from .websockets import dashboard_ws
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -50,6 +51,25 @@ app.include_router(
     dashboard.router,
     prefix=f"{settings.api_v1_str}/dashboard",
     tags=["dashboard"]
+)
+
+app.include_router(
+    walkin.router,
+    prefix=f"{settings.api_v1_str}/walkin",
+    tags=["walkin"]
+)
+
+app.include_router(
+    checkin.router,
+    prefix=f"{settings.api_v1_str}/checkin",
+    tags=["checkin"]
+)
+
+# Include WebSocket routers
+app.include_router(
+    dashboard_ws.router,
+    prefix=f"{settings.api_v1_str}/ws",
+    tags=["websockets"]
 )
 
 

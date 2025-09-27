@@ -5,3 +5,24 @@ pydantic
 pydantic-settings
 python-multipart
 python-dotenv
+pytest
+pytest-asyncio
+httpx
+pytest-mock
+faker
+# Google ADK and Agent Protocol
+google-cloud-aiplatform
+google-cloud-pubsub
+google-cloud-storage
+google-cloud-logging
+google-cloud-monitoring
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+grpcio
+protobuf
+# Agent Protocol
+asyncio-mqtt
+paho-mqtt
+websockets
+aiohttp
