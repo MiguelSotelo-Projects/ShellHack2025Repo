@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ops Mesh Test Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🏥 Ops Mesh Test Interface</h1>
+    <p>Test your hospital operations management system directly in the browser!</p>
+
+    <div class="grid">
+        <!-- Dashboard Stats -->
+        <div class="container">
+            <h2>📊 Dashboard Stats</h2>
+            <button onclick="getDashboardStats()">Get Dashboard Stats</button>
+            <div id="dashboard-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Queue Summary -->
+        <div class="container">
+            <h2>📋 Queue Summary</h2>
+            <button onclick="getQueueSummary()">Get Queue Summary</button>
+            <div id="queue-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Appointment Check-in -->
+        <div class="container">
+            <h2>📅 Appointment Check-in</h2>
+            <input type="text" id="confirmation-code" placeholder="Confirmation Code (e.g., KRPM-4350)" style="width: 200px;">
+            <input type="text" id="last-name" placeholder="Last Name (e.g., Wilson)" style="width: 150px;">
+            <br>
+            <button onclick="checkInAppointment()">Check In Appointment</button>
+            <div id="checkin-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Walk-in Registration -->
+        <div class="container">
+            <h2>🚶 Walk-in Registration</h2>
+            <input type="text" id="first-name" placeholder="First Name" style="width: 120px;">
+            <input type="text" id="walkin-last-name" placeholder="Last Name" style="width: 120px;">
+            <br>
+            <input type="text" id="phone" placeholder="Phone (optional)" style="width: 150px;">
+            <input type="text" id="reason" placeholder="Reason for visit" style="width: 200px;">
+            <br>
+            <select id="priority" style="width: 100px;">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+            </select>
+            <button onclick="createWalkIn()">Create Walk-in</button>
+            <div id="walkin-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="container">
+        <h2>📈 Performance KPIs</h2>
+        <button onclick="getKPIs()">Get KPIs</button>
+        <div id="kpis-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors'
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                return {
+                    success: true,
+                    status: response.status,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        function showResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            
+            if (result.success) {
+                element.className = 'result success';
+                element.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                element.className = 'result error';
+                element.textContent = `Error: ${result.error || result.data?.detail || 'Unknown error'}`;
+            }
+        }
+
+        async function getDashboardStats() {
+            const result = await apiCall('/dashboard/stats');
+            showResult('dashboard-result', result);
+        }
+
+        async function getQueueSummary() {
+            const result = await apiCall('/dashboard/queue-summary');
+            showResult('queue-result', result);
+        }
+
+        async function checkInAppointment() {
+            const confirmationCode = document.getElementById('confirmation-code').value;
+            const lastName = document.getElementById('last-name').value;
+            
+            if (!confirmationCode || !lastName) {
+                alert('Please enter both confirmation code and last name');
+                return;
+            }
+
+            const result = await apiCall('/appointments/check-in', 'POST', {
+                confirmation_code: confirmationCode,
+                last_name: lastName
+            });
+            showResult('checkin-result', result);
+        }
+
+        async function createWalkIn() {
+            const firstName = document.getElementById('first-name').value;
+            const lastName = document.getElementById('walkin-last-name').value;
+            const phone = document.getElementById('phone').value;
+            const reason = document.getElementById('reason').value;
+            const priority = document.getElementById('priority').value;
+            
+            if (!firstName || !lastName || !reason) {
+                alert('Please enter first name, last name, and reason');
+                return;
+            }
+
+            const result = await apiCall('/queue/walk-in', 'POST', {
+                first_name: firstName,
+                last_name: lastName,
+                phone: phone || undefined,
+                reason: reason,
+                priority: priority
+            });
+            showResult('walkin-result', result);
+        }
+
+        async function getKPIs() {
+            const result = await apiCall('/dashboard/kpis');
+            showResult('kpis-result', result);
+        }
+
+        // Auto-load dashboard stats on page load
+        window.onload = function() {
+            getDashboardStats();
+            getQueueSummary();
+        };
+    </script>
+</body>
+</html>
