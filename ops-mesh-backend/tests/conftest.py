@@ -9,7 +9,7 @@ from app.main import app
 from app.core.database import get_db, Base
 from app.models.patient import Patient
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentType
-from app.models.queue import QueueEntry
+from app.models.queue import QueueEntry, QueueStatus, QueueType, QueuePriority
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -152,3 +152,47 @@ def multiple_appointments(db_session, multiple_patients):
     for appointment in appointments:
         db_session.refresh(appointment)
     return appointments
+
+
+@pytest.fixture
+def sample_queue_entry_data(sample_patient, sample_appointment):
+    """Generate sample queue entry data."""
+    return {
+        "ticket_number": fake.bothify(text="Q-####"),
+        "patient_id": sample_patient.id,
+        "appointment_id": sample_appointment.id,
+        "queue_type": QueueType.APPOINTMENT,
+        "status": QueueStatus.WAITING,
+        "priority": QueuePriority.MEDIUM,
+        "reason": fake.sentence(),
+        "estimated_wait_time": 30
+    }
+
+
+@pytest.fixture
+def sample_queue_entry(db_session, sample_queue_entry_data):
+    """Create a sample queue entry in the database."""
+    queue_entry = QueueEntry(**sample_queue_entry_data)
+    db_session.add(queue_entry)
+    db_session.commit()
+    db_session.refresh(queue_entry)
+    return queue_entry
+
+
+@pytest.fixture
+def walkin_patient_data():
+    """Generate walk-in patient data."""
+    return {
+        "patient": {
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+            "date_of_birth": fake.date_of_birth(minimum_age=18, maximum_age=80),
+            "phone": fake.phone_number(),
+            "email": fake.email(),
+            "emergency_contact": fake.name(),
+            "medical_record_number": fake.bothify(text="MRN-####"),
+            "insurance_id": fake.bothify(text="INS-####")
+        },
+        "reason": fake.sentence(),
+        "priority": QueuePriority.MEDIUM
+    }

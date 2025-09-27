@@ -18,18 +18,18 @@ class TestWalkInAPI:
                 "email": "john.doe@example.com"
             },
             "reason": "Emergency consultation",
-            "priority": 1
+            "priority": "medium"
         }
         
         response = client.post("/api/v1/walkin/", json=walkin_data)
-        assert response.status_code == 201
+        assert response.status_code == 200
         
         walkin_info = response.json()
         assert "patient_id" in walkin_info
         assert "appointment_id" in walkin_info
         assert "queue_entry_id" in walkin_info
         assert walkin_info["reason"] == "Emergency consultation"
-        assert walkin_info["priority"] == 1
+        assert walkin_info["priority"] == "medium"
     
     def test_register_walkin_existing_patient(self, client, sample_patient):
         """Test registering a walk-in for existing patient."""
@@ -40,7 +40,7 @@ class TestWalkInAPI:
         }
         
         response = client.post("/api/v1/walkin/", json=walkin_data)
-        assert response.status_code == 201
+        assert response.status_code == 200
         
         walkin_info = response.json()
         assert walkin_info["patient_id"] == sample_patient.id
@@ -61,7 +61,7 @@ class TestWalkInAPI:
         walkin_data = {
             "patient_id": 99999,
             "reason": "Emergency consultation",
-            "priority": 1
+            "priority": "medium"
         }
         
         response = client.post("/api/v1/walkin/", json=walkin_data)
@@ -69,18 +69,19 @@ class TestWalkInAPI:
     
     def test_get_walkin_queue(self, client, db_session, multiple_patients):
         """Test getting walk-in queue."""
-        # Create walk-in appointments
+        # Create walk-in queue entries
+        from app.models.queue import QueueEntry, QueueType, QueuePriority, QueueStatus
         for i, patient in enumerate(multiple_patients[:3]):
-            appointment = Appointment(
-                confirmation_code=f"WALK-{i:04d}",
+            from app.models.common import generate_ticket_number
+            queue_entry = QueueEntry(
+                ticket_number=generate_ticket_number(),
                 patient_id=patient.id,
-                provider_name="Dr. WalkIn",
-                appointment_type=AppointmentType.ROUTINE,
-                status=AppointmentStatus.SCHEDULED,
-                scheduled_time=datetime.now() + timedelta(minutes=i*15),
+                queue_type=QueueType.WALK_IN,
+                priority=QueuePriority.MEDIUM,
+                status=QueueStatus.WAITING,
                 reason="Walk-in consultation"
             )
-            db_session.add(appointment)
+            db_session.add(queue_entry)
         
         db_session.commit()
         
@@ -150,25 +151,26 @@ class TestWalkInAPI:
     def test_walkin_priority_handling(self, client, db_session, multiple_patients):
         """Test walk-in priority handling."""
         # Create walk-ins with different priorities
-        priorities = [1, 3, 2]  # Lower number = higher priority
-        appointments = []
+        from app.models.queue import QueueEntry, QueueType, QueuePriority, QueueStatus
+        priorities = [QueuePriority.URGENT, QueuePriority.LOW, QueuePriority.HIGH]
+        queue_entries = []
         
         for i, (patient, priority) in enumerate(zip(multiple_patients[:3], priorities)):
-            appointment = Appointment(
-                confirmation_code=f"WALK-{i:04d}",
+            from app.models.common import generate_ticket_number
+            queue_entry = QueueEntry(
+                ticket_number=generate_ticket_number(),
                 patient_id=patient.id,
-                provider_name="Dr. WalkIn",
-                appointment_type=AppointmentType.ROUTINE,
-                status=AppointmentStatus.SCHEDULED,
-                scheduled_time=datetime.now() + timedelta(minutes=i*10),
-                reason=f"Walk-in consultation (Priority {priority})"
+                queue_type=QueueType.WALK_IN,
+                priority=priority,
+                status=QueueStatus.WAITING,
+                reason=f"Walk-in consultation (Priority {priority.value})"
             )
-            db_session.add(appointment)
-            appointments.append(appointment)
+            db_session.add(queue_entry)
+            queue_entries.append(queue_entry)
         
         db_session.commit()
-        for appointment in appointments:
-            db_session.refresh(appointment)
+        for queue_entry in queue_entries:
+            db_session.refresh(queue_entry)
         
         # Get walk-in queue (should be ordered by priority)
         response = client.get("/api/v1/walkin/queue")

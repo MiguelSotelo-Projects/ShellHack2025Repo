@@ -21,8 +21,6 @@ google-auth-oauthlib
 google-auth-httplib2
 grpcio
 protobuf
-# Agent Protocol
-asyncio-mqtt
-paho-mqtt
+# Agent Protocol Dependencies
 websockets
 aiohttp

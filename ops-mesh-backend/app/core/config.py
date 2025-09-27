@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     
     # API
     api_v1_str: str = "/api/v1"
-    project_name: str = "Ops Mesh"
+    project_name: str = "Ops Mesh Backend"
     
     # CORS
     backend_cors_origins: list[str] = [

@@ -12,7 +12,7 @@ class TestSettings:
         
         assert test_settings.database_url == "sqlite:///./ops_mesh.db"
         assert test_settings.api_v1_str == "/api/v1"
-        assert test_settings.project_name == "Ops Mesh"
+        assert test_settings.project_name == "Ops Mesh Backend"
         assert test_settings.redis_url == "redis://localhost:6379"
         assert test_settings.websocket_path == "/ws"
         
@@ -58,18 +58,19 @@ class TestSettings:
     def test_settings_singleton(self):
         """Test that the settings instance is properly configured."""
         assert isinstance(settings, Settings)
-        assert settings.project_name == "Ops Mesh"
+        assert settings.project_name == "Ops Mesh Backend"
         assert settings.database_url == "sqlite:///./ops_mesh.db"
     
     def test_validation_errors(self):
         """Test that invalid configuration values raise appropriate errors."""
-        from pydantic_settings.sources import SettingsError
+        from pydantic import ValidationError
         
         # Test with invalid environment variable format
         with patch.dict('os.environ', {
             'BACKEND_CORS_ORIGINS': 'invalid_json_format',  # Invalid JSON format
         }):
             # This should raise a SettingsError for invalid JSON
+            from pydantic_settings.exceptions import SettingsError
             with pytest.raises(SettingsError):
                 Settings()
     
