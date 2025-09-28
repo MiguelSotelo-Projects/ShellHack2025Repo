@@ -10,7 +10,7 @@ pytest-asyncio
 httpx
 pytest-mock
 faker
-# Google ADK and Agent Protocol
+# Google Cloud Services
 google-cloud-aiplatform
 google-cloud-pubsub
 google-cloud-storage
@@ -24,3 +24,6 @@ protobuf
 # Agent Protocol Dependencies
 websockets
 aiohttp
+# A2A Protocol Dependencies
+a2a-protocol==0.1.0
+# Note: google-adk is implemented internally as it's not available as a public package

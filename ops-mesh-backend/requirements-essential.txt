@@ -1,0 +1,7 @@
+# Essential requirements only - fast installation
+fastapi
+uvicorn
+pydantic
+python-dotenv
+aiohttp
+websockets

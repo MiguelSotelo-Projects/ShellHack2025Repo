@@ -7,9 +7,15 @@ Handles sending notifications, alerts, and updates to patients and staff.
 import asyncio
 import logging
 from typing import Dict, Any, List
-from google.adk.agents import Agent
-from google.adk.tools import BaseTool
-from ..protocol.agent_protocol import AgentProtocol, MessageType, Priority, ProtocolMessage
+
+# Try to import Google ADK, fallback to internal implementation
+try:
+    from google.adk.agents import Agent
+    from google.adk.tools import BaseTool
+except ImportError:
+    from ..google_adk_fallback import Agent, BaseTool
+
+from ..protocol.a2a_protocol import A2AProtocol, A2ATaskRequest, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +23,7 @@ logger = logging.getLogger(__name__)
 class NotificationTool(BaseTool):
     """Tool for sending notifications and alerts."""
     
-    def __init__(self, protocol: AgentProtocol):
+    def __init__(self, protocol: A2AProtocol):
         super().__init__(
             name="notification_tool",
             description="Sends notifications and alerts to patients and staff"
@@ -135,75 +141,71 @@ class NotificationAgent:
     
     def __init__(self, project_id: str = None):
         self.agent_id = "notification_agent"
-        self.protocol = AgentProtocol(self.agent_id, project_id)
+        self.protocol = A2AProtocol(
+            self.agent_id, 
+            "ops-mesh-backend/agents/notification_agent.json"
+        )
         self.agent = None
         self.notification_tool = None
     
     async def initialize(self):
         """Initialize the agent and its tools."""
-        await self.protocol.initialize()
+        await self.protocol.start()
         
         # Create tools
         self.notification_tool = NotificationTool(self.protocol)
         
         # Create ADK agent
-        self.agent = Agent(
-            name="Notification Agent",
-            description="Sends notifications and alerts to patients and staff",
-            tools=[self.notification_tool],
-            model="gemini-1.5-flash"
-        )
+        try:
+            self.agent = Agent(
+                name="Notification Agent",
+                description="Sends notifications and alerts to patients and staff",
+                tools=[self.notification_tool],
+                model="gemini-1.5-flash"
+            )
+        except TypeError:
+            # Fallback for internal Agent implementation
+            self.agent = Agent(
+                name="Notification Agent",
+                tools=[self.notification_tool]
+            )
         
-        # Register message handlers
-        self.protocol.register_handler(MessageType.REQUEST, self._handle_request)
-        self.protocol.register_handler(MessageType.NOTIFICATION, self._handle_notification)
-        self.protocol.register_handler(MessageType.COORDINATION, self._handle_coordination)
+        # Register task handlers
+        self.protocol.register_task_handler("send_notification", self._handle_send_notification)
+        self.protocol.register_task_handler("send_alert", self._handle_send_alert)
+        self.protocol.register_task_handler("send_reminder", self._handle_send_reminder)
         
         logger.info("Notification Agent initialized")
     
-    async def _handle_request(self, message: ProtocolMessage):
-        """Handle incoming requests."""
-        logger.info(f"Notification Agent received request: {message.payload}")
-        
-        # Process the request using notification tool
-        result = await self.notification_tool.execute(message.payload)
-        
-        await self.protocol.send_response(message, result)
+    async def _handle_send_notification(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle send notification task."""
+        logger.info(f"Notification Agent handling send_notification: {data}")
+        return await self.notification_tool.execute({
+            "action": "send_notification",
+            "recipient": data.get("recipient"),
+            "message": data.get("message"),
+            "type": data.get("type", "info")
+        })
     
-    async def _handle_notification(self, message: ProtocolMessage):
-        """Handle notifications from other agents."""
-        event = message.payload.get("event")
-        
-        if event == "queue_updated":
-            # Send queue update notification
-            await self.notification_tool.execute({
-                "action": "send_notification",
-                "recipient": f"patient_{message.payload.get('patient_id')}",
-                "message": f"Your position in queue: {message.payload.get('position')}. Estimated wait: {message.payload.get('estimated_wait')} minutes",
-                "type": "queue_update"
-            })
-        
-        elif event == "patient_called":
-            # Send patient call notification
-            await self.notification_tool.execute({
-                "action": "send_alert",
-                "recipient": f"patient_{message.payload.get('patient_id')}",
-                "message": message.payload.get("message", "Please proceed to the consultation room"),
-                "level": "high"
-            })
+    async def _handle_send_alert(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle send alert task."""
+        logger.info(f"Notification Agent handling send_alert: {data}")
+        return await self.notification_tool.execute({
+            "action": "send_alert",
+            "recipient": data.get("recipient"),
+            "message": data.get("message"),
+            "level": data.get("level", "high")
+        })
     
-    async def _handle_coordination(self, message: ProtocolMessage):
-        """Handle coordination messages."""
-        logger.info(f"Notification Agent received coordination: {message.payload}")
-        
-        # Handle coordination logic here
-        flow_id = message.payload.get("flow_id")
-        step_data = message.payload.get("data", {})
-        
-        # Process coordination step
-        if step_data.get("action") == "send_notification":
-            result = await self.notification_tool.execute(step_data)
-            logger.info(f"Processed coordination step: {result}")
+    async def _handle_send_reminder(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle send reminder task."""
+        logger.info(f"Notification Agent handling send_reminder: {data}")
+        return await self.notification_tool.execute({
+            "action": "send_reminder",
+            "recipient": data.get("recipient"),
+            "message": data.get("message"),
+            "reminder_type": data.get("reminder_type", "appointment")
+        })
     
     async def start(self):
         """Start the agent."""
@@ -212,10 +214,9 @@ class NotificationAgent:
         
         logger.info("Starting Notification Agent...")
         
-        # Start listening for messages
-        await self.protocol.start_listening()
+        logger.info("Notification Agent started")
     
     async def stop(self):
         """Stop the agent."""
-        await self.protocol.stop_listening()
+        await self.protocol.stop()
         logger.info("Notification Agent stopped")

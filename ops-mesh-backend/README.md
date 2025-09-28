@@ -16,22 +16,21 @@ Ops Mesh Backend is a modern hospital operations management system that uses int
 - **Walk-in Registration**: Streamlined walk-in patient processing
 - **Dashboard Analytics**: Real-time operational insights and KPIs
 
-### Intelligent Agent System
-- **FrontDesk Agent**: Tablet interface and patient check-in automation
-- **Scheduling Agent**: Appointment management and availability optimization
-- **Insurance Agent**: Coverage verification and payment processing
-- **Hospital Agent**: Bed and resource management
+### Intelligent Agent System (A2A Protocol)
+- **FrontDesk Agent**: Patient registration and check-in automation
 - **Queue Agent**: Patient calling and queue optimization
-- **Staff Agent**: Resource coordination and staff management
-- **Orchestrator Agent**: System-wide coordination and flow management
+- **Appointment Agent**: Appointment management and scheduling
+- **Notification Agent**: Alerts and notifications management
+- **Orchestrator Agent**: System-wide coordination and workflow management
 
 ### Technology Stack
 - **Backend**: FastAPI with Python 3.8+
 - **Database**: SQLAlchemy with SQLite (production-ready for PostgreSQL)
-- **Agent System**: Google ADK with Pub/Sub messaging
+- **Agent System**: Google ADK with A2A (Agent-to-Agent) protocol
 - **Cloud Services**: Google Cloud Platform (AI Platform, Pub/Sub, Storage, Logging, Monitoring)
 - **Real-time**: WebSocket support for live updates
 - **Testing**: Comprehensive test suite with pytest
+- **A2A Protocol**: Official Agent-to-Agent communication protocol
 
 ## 🏗️ Architecture
 
@@ -92,23 +91,23 @@ Patient Check-in → FrontDesk Agent → Orchestrator Agent
    pip install -r requirements.txt
    ```
 
-3. **Set up Google Cloud configuration**:
+3. **Set up A2A configuration**:
    ```bash
-   # Automated setup (recommended)
-   python setup_google_adk.py
+   # Automated A2A setup (recommended)
+   python setup_a2a.py --setup
    
-   # Or manual setup (see GOOGLE_ADK_SETUP.md)
+   # Or manual setup (see A2A_IMPLEMENTATION_README.md)
    ```
 
-4. **Test the configuration**:
+4. **Test the A2A implementation**:
    ```bash
-   python test_google_adk.py
+   python test_a2a_implementation.py
    ```
 
 5. **Start the system**:
    ```bash
-   # Start the agent system
-   python start_agents.py
+   # Start the A2A server with all agents
+   python setup_a2a.py --start
    
    # Or start the API server
    python run.py
@@ -143,12 +142,21 @@ DEBUG=true
 RELOAD=true
 ```
 
+### A2A Protocol Setup
+
+The system uses the A2A (Agent-to-Agent) protocol for agent communication:
+
+- **Agent Discovery**: Automatic agent discovery and capability management
+- **Task Coordination**: Structured task-based communication
+- **Workflow Orchestration**: Multi-agent workflow management
+- **Health Monitoring**: Agent health and status monitoring
+
 ### Google Cloud Setup
 
 The system requires the following Google Cloud services:
 
 - **AI Platform API**: For intelligent agent capabilities
-- **Pub/Sub API**: For agent-to-agent communication
+- **Pub/Sub API**: For agent-to-agent communication (legacy)
 - **Cloud Storage API**: For data storage and flow definitions
 - **Cloud Logging API**: For centralized logging
 - **Cloud Monitoring API**: For system monitoring
@@ -201,35 +209,41 @@ Required IAM roles for the service account:
 - `GET /api/v1/dashboard/queue-summary` - Get queue summary
 - `GET /api/v1/dashboard/kpis` - Get KPIs
 
-## 🤖 Agent System
+## 🤖 A2A Agent System
 
 ### Agent Types
 
-1. **FrontDesk Agent**: Handles tablet interface and patient check-in
-2. **Scheduling Agent**: Manages appointments and availability
-3. **Insurance Agent**: Processes coverage verification and payments
-4. **Hospital Agent**: Manages bed reservations and resources
-5. **Queue Agent**: Handles patient calling and queue optimization
-6. **Staff Agent**: Coordinates staff assignments and resources
-7. **Orchestrator Agent**: Coordinates system-wide operations
+1. **FrontDesk Agent**: Handles patient registration and check-in
+2. **Queue Agent**: Manages patient queues and wait times
+3. **Appointment Agent**: Manages appointment scheduling and coordination
+4. **Notification Agent**: Sends notifications and alerts
+5. **Orchestrator Agent**: Coordinates complex workflows between agents
+
+### A2A Protocol Features
+
+- **Agent Discovery**: Automatic discovery of available agents and capabilities
+- **Task-Based Communication**: Structured task requests and responses
+- **Workflow Orchestration**: Multi-step workflow coordination
+- **Health Monitoring**: Real-time agent health and status monitoring
+- **Capability Management**: Dynamic capability discovery and matching
 
 ### Patient Flows
 
-#### Appointment Check-in Flow
+#### Appointment Check-in Flow (A2A)
 ```
-FrontDesk → Scheduling → Insurance → Hospital → Queue → Staff
+FrontDesk Agent → Queue Agent → Notification Agent
 Duration: ~30 minutes | Success Rate: 95%
 ```
 
-#### Walk-in Registration Flow
+#### Walk-in Registration Flow (A2A)
 ```
-FrontDesk → Hospital → Queue → Staff
+FrontDesk Agent → Queue Agent → Notification Agent
 Duration: ~15 minutes | Success Rate: 90%
 ```
 
-#### Emergency Admission Flow
+#### Emergency Admission Flow (A2A)
 ```
-FrontDesk → Hospital → Queue → Staff (Priority)
+FrontDesk Agent → Queue Agent (Priority) → Notification Agent (Alert)
 Duration: ~5 minutes | Success Rate: 99%
 ```
 
@@ -240,6 +254,9 @@ Duration: ~5 minutes | Success Rate: 99%
 ```bash
 # Run all tests
 pytest
+
+# Run A2A implementation tests
+python test_a2a_implementation.py
 
 # Run with coverage
 pytest --cov=app
@@ -255,17 +272,21 @@ pytest tests/test_walkin.py
 
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: API endpoint testing
-- **Agent Tests**: Agent communication testing
+- **A2A Tests**: A2A protocol and agent communication testing
+- **Agent Tests**: Agent functionality testing
 - **Flow Tests**: Patient flow testing
+- **Discovery Tests**: Agent discovery and capability testing
 
 ## 📊 Monitoring
 
 ### System Metrics
 
-- **Agent Health**: Real-time agent status monitoring
+- **Agent Health**: Real-time agent status monitoring via A2A protocol
 - **Flow Performance**: Patient flow completion rates and timing
 - **Queue Metrics**: Wait times and queue optimization
 - **Resource Utilization**: Bed and staff utilization rates
+- **A2A Protocol Metrics**: Task completion rates and communication performance
+- **Discovery Service Metrics**: Agent registration and capability discovery stats
 
 ### Google Cloud Monitoring
 
@@ -373,10 +394,11 @@ ops-mesh-backend/
 
 ## 📚 Documentation
 
-- **[Google ADK Setup Guide](GOOGLE_ADK_SETUP.md)**: Complete setup instructions
-- **[Google ADK Implementation](GOOGLE_ADK_README.md)**: Technical implementation details
+- **[A2A Implementation Guide](A2A_IMPLEMENTATION_README.md)**: Complete A2A setup and implementation guide
+- **[Agent Communication README](AGENT_COMMUNICATION_README.md)**: Agent-to-agent communication system
 - **[API Documentation](http://localhost:8000/docs)**: Interactive API documentation
-- **[Agent Protocol](app/agents/protocol/)**: Agent communication protocol
+- **[A2A Protocol](app/agents/protocol/a2a_protocol.py)**: A2A protocol implementation
+- **[Agent Discovery](app/agents/discovery_service.py)**: Agent discovery service
 
 ## 🤝 Contributing
 
@@ -390,10 +412,11 @@ ops-mesh-backend/
 ### Development Guidelines
 
 - Follow PEP 8 style guidelines
-- Add comprehensive tests
-- Update documentation
-- Follow Google Cloud best practices
+- Add comprehensive tests including A2A protocol tests
+- Update documentation and agent cards
+- Follow Google ADK and A2A protocol best practices
 - Ensure backward compatibility
+- Update agent capabilities when adding new features
 
 ## 📄 License
 
@@ -403,9 +426,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### Getting Help
 
-1. **Check the documentation**: Review setup guides and API docs
-2. **Run tests**: Use `python test_google_adk.py` to diagnose issues
-3. **Check logs**: Review agent system and API logs
+1. **Check the documentation**: Review A2A implementation guide and API docs
+2. **Run tests**: Use `python test_a2a_implementation.py` to diagnose issues
+3. **Check logs**: Review agent system and A2A protocol logs
 4. **Google Cloud Console**: Check for errors in the console
 5. **Community Support**: Use GitHub issues for questions
 
@@ -415,23 +438,27 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **API Not Enabled**: Enable required Google Cloud APIs
 - **Permission Issues**: Check IAM roles and permissions
 - **Network Issues**: Verify firewall and VPC configuration
+- **A2A Protocol Issues**: Check agent cards and discovery service
+- **Agent Registration Issues**: Verify agent capabilities and dependencies
 
 ## 🎯 Roadmap
 
 ### Upcoming Features
 
+- **Advanced A2A Features**: Enhanced workflow orchestration and agent learning
 - **Machine Learning**: AI-powered patient flow optimization
-- **Mobile App**: Native mobile application
+- **Mobile App**: Native mobile application with A2A integration
 - **Advanced Analytics**: Predictive analytics and insights
-- **Integration**: Third-party system integrations
-- **Multi-tenant**: Support for multiple hospitals
+- **Integration**: Third-party system integrations via A2A protocol
+- **Multi-tenant**: Support for multiple hospitals with A2A coordination
 
 ### Performance Improvements
 
+- **A2A Optimization**: Enhanced task batching and agent pooling
 - **Caching Layer**: Redis caching implementation
 - **Database Optimization**: PostgreSQL migration
-- **Real-time Updates**: WebSocket enhancements
-- **Load Balancing**: Advanced load balancing strategies
+- **Real-time Updates**: WebSocket enhancements with A2A integration
+- **Load Balancing**: Advanced load balancing strategies for agents
 
 ---
 

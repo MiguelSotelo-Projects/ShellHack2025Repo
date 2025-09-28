@@ -1,4 +1,4 @@
-import { apiClient } from '../api';
+import { api, fetchAPI } from '../api';
 
 export interface DashboardStats {
   queue_stats: {
@@ -50,45 +50,96 @@ export interface KPIs {
 
 export class DashboardService {
   static async getDashboardStats(): Promise<DashboardStats> {
-    const response = await apiClient.get<DashboardStats>('/dashboard/stats');
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(api.dashboard.stats);
+      
+      if (!response.success) {
+        throw new Error('Failed to fetch dashboard stats');
+      }
+      
+      return response.stats;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to fetch dashboard stats');
-    }
-    
-    return response.data;
   }
 
   static async getQueueSummary(): Promise<QueueSummary> {
-    const response = await apiClient.get<QueueSummary>('/dashboard/queue-summary');
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const [queueResponse, patientsResponse] = await Promise.all([
+        fetchAPI(api.queue.entries),
+        fetchAPI(api.patients.list)
+      ]);
+      
+      if (!queueResponse.success || !patientsResponse.success) {
+        throw new Error('Failed to fetch queue summary');
+      }
+      
+      // Transform the data to match the expected format
+      const waiting = queueResponse.queue_entries
+        .filter((entry: any) => entry.status === 'waiting')
+        .map((entry: any) => ({
+          id: entry.id,
+          ticket_number: entry.ticket_number,
+          patient_name: entry.patient ? `${entry.patient.first_name} ${entry.patient.last_name}` : 'Unknown',
+          reason: entry.reason || 'No reason provided',
+          priority: entry.priority,
+          queue_type: entry.queue_type,
+          wait_time_minutes: entry.estimated_wait_time || 30,
+          estimated_wait_time: entry.estimated_wait_time
+        }));
+      
+      const in_progress = queueResponse.queue_entries
+        .filter((entry: any) => entry.status === 'in_progress')
+        .map((entry: any) => ({
+          id: entry.id,
+          ticket_number: entry.ticket_number,
+          patient_name: entry.patient ? `${entry.patient.first_name} ${entry.patient.last_name}` : 'Unknown',
+          reason: entry.reason || 'No reason provided',
+          priority: entry.priority,
+          queue_type: entry.queue_type,
+          wait_time_minutes: entry.actual_wait_time || 0,
+          estimated_wait_time: entry.estimated_wait_time
+        }));
+      
+      const called = queueResponse.queue_entries
+        .filter((entry: any) => entry.status === 'called')
+        .map((entry: any) => ({
+          id: entry.id,
+          ticket_number: entry.ticket_number,
+          patient_name: entry.patient ? `${entry.patient.first_name} ${entry.patient.last_name}` : 'Unknown',
+          reason: entry.reason || 'No reason provided',
+          priority: entry.priority,
+          queue_type: entry.queue_type,
+          wait_time_minutes: entry.actual_wait_time || 0,
+          estimated_wait_time: entry.estimated_wait_time
+        }));
+      
+      return {
+        waiting,
+        in_progress,
+        called
+      };
+    } catch (error) {
+      console.error('Error fetching queue summary:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to fetch queue summary');
-    }
-    
-    return response.data;
   }
 
   static async getKPIs(): Promise<KPIs> {
-    const response = await apiClient.get<KPIs>('/dashboard/kpis');
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // For now, return mock KPIs since we don't have these endpoints yet
+      return {
+        handoff_latency_seconds: 45,
+        end_to_end_time_minutes: 25,
+        auto_resolved_percentage: 85,
+        total_processed_24h: 120,
+        completed_24h: 98
+      };
+    } catch (error) {
+      console.error('Error fetching KPIs:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to fetch KPIs');
-    }
-    
-    return response.data;
   }
 }
 

@@ -16,7 +16,7 @@ app_dir = Path(__file__).parent / "app"
 sys.path.insert(0, str(app_dir))
 
 from agents.agent_manager import AgentManager
-from agents.protocol.agent_protocol import MessageType, Priority
+from agents.protocol.a2a_protocol import A2AProtocol, A2ATaskRequest, TaskStatus
 
 # Set up logging
 logging.basicConfig(
@@ -82,12 +82,11 @@ async def test_patient_registration_flow(manager: AgentManager):
         "priority": "medium"
     }
     
-    # Send message to orchestrator to start patient flow
+    # Send task request to orchestrator to start patient flow
     success = await manager.send_message_to_agent(
         target_agent="orchestrator",
-        message_type="request",
+        message_type="start_patient_flow",
         payload={
-            "action": "start_patient_flow",
             "patient_data": patient_data,
             "flow_type": "walk_in"
         }
@@ -114,12 +113,11 @@ async def test_appointment_scheduling_flow(manager: AgentManager):
         "type": "routine"
     }
     
-    # Send message to orchestrator to start appointment flow
+    # Send task request to orchestrator to start appointment flow
     success = await manager.send_message_to_agent(
         target_agent="orchestrator",
-        message_type="request",
+        message_type="start_appointment_flow",
         payload={
-            "action": "start_appointment_flow",
             "appointment_data": appointment_data
         }
     )
@@ -144,12 +142,11 @@ async def test_emergency_coordination(manager: AgentManager):
         "severity": "critical"
     }
     
-    # Send emergency message to orchestrator
+    # Send emergency task request to orchestrator
     success = await manager.send_message_to_agent(
         target_agent="orchestrator",
-        message_type="request",
+        message_type="coordinate_emergency",
         payload={
-            "action": "coordinate_emergency",
             "emergency_data": emergency_data
         }
     )
@@ -183,16 +180,19 @@ async def test_queue_management(manager: AgentManager):
     ]
     
     for operation in queue_operations:
+        action = operation["action"]
+        payload = {k: v for k, v in operation.items() if k != "action"}
+        
         success = await manager.send_message_to_agent(
             target_agent="queue",
-            message_type="request",
-            payload=operation
+            message_type=action,
+            payload=payload
         )
         
         if success:
-            logger.info(f"   ✅ Queue operation '{operation['action']}' completed")
+            logger.info(f"   ✅ Queue operation '{action}' completed")
         else:
-            logger.error(f"   ❌ Queue operation '{operation['action']}' failed")
+            logger.error(f"   ❌ Queue operation '{action}' failed")
         
         await asyncio.sleep(1)
 

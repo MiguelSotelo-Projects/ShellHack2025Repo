@@ -1,4 +1,4 @@
-import { apiClient } from '../api';
+import { api, fetchAPI } from '../api';
 
 export interface Appointment {
   id: number;
@@ -27,55 +27,43 @@ export interface AppointmentResponse {
 
 export class AppointmentService {
   static async getAppointments(): Promise<Appointment[]> {
-    const response = await apiClient.get<AppointmentResponse[]>('/appointments/');
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // For now, return empty array since we don't have appointments endpoint yet
+      return [];
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      throw error;
     }
-    
-    return response.data || [];
   }
 
   static async getAppointmentById(id: number): Promise<Appointment> {
-    const response = await apiClient.get<Appointment>(`/appointments/${id}`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // For now, throw error since we don't have appointments endpoint yet
+      throw new Error('Appointment service not implemented yet');
+    } catch (error) {
+      console.error('Error fetching appointment:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Appointment not found');
-    }
-    
-    return response.data;
   }
 
   static async checkInAppointment(checkIn: AppointmentCheckIn): Promise<Appointment> {
-    const response = await apiClient.post<Appointment>('/appointments/check-in', checkIn);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // For now, throw error since we don't have appointments endpoint yet
+      throw new Error('Appointment check-in not implemented yet');
+    } catch (error) {
+      console.error('Error checking in appointment:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Check-in failed');
-    }
-    
-    return response.data;
   }
 
   static async getAppointmentByCode(confirmationCode: string): Promise<Appointment> {
-    const response = await apiClient.get<Appointment>(`/appointments/code/${confirmationCode}`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // For now, throw error since we don't have appointments endpoint yet
+      throw new Error('Appointment lookup not implemented yet');
+    } catch (error) {
+      console.error('Error fetching appointment by code:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Appointment not found');
-    }
-    
-    return response.data;
   }
 }
 

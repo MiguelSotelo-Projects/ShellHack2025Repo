@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/masot/Shellhacks/ops-mesh/ops-mesh-backend/venv
+set -gx VIRTUAL_ENV /home/masot/ShellyHacksOP/ShellHack2025Repo/ops-mesh-backend/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

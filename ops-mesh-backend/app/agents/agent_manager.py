@@ -1,7 +1,7 @@
 """
 Agent Manager
 
-Manages and coordinates all hospital agents for agent-to-agent communication.
+Manages and coordinates all hospital agents for A2A (Agent-to-Agent) communication.
 """
 
 import asyncio
@@ -14,6 +14,7 @@ from .specialized.queue_agent import QueueAgent
 from .specialized.appointment_agent import AppointmentAgent
 from .specialized.notification_agent import NotificationAgent
 from .orchestrator_agent import OrchestratorAgent
+from .discovery_service import discovery_service
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,10 @@ class AgentManager:
     async def initialize_all_agents(self):
         """Initialize all agents."""
         logger.info("Initializing all agents...")
+        
+        # Start discovery service first
+        await discovery_service.start()
+        logger.info("🔍 Discovery service started")
         
         for agent_name, agent in self.agents.items():
             try:
@@ -79,6 +84,10 @@ class AgentManager:
                 logger.info(f"Stopped {agent_name} agent")
             except Exception as e:
                 logger.error(f"Error stopping {agent_name} agent: {e}")
+        
+        # Stop discovery service
+        await discovery_service.stop()
+        logger.info("🔍 Discovery service stopped")
     
     async def get_agent_status(self) -> Dict[str, Any]:
         """Get status of all agents."""
@@ -98,6 +107,24 @@ class AgentManager:
                 }
         
         return status
+    
+    async def get_discovery_info(self) -> Dict[str, Any]:
+        """Get agent discovery information."""
+        try:
+            agents = await discovery_service.discover_agents()
+            stats = await discovery_service.get_discovery_stats()
+            
+            return {
+                "discovery_stats": stats,
+                "available_agents": agents,
+                "agent_capabilities": {
+                    agent_id: await discovery_service.get_agent_capabilities(agent_id)
+                    for agent_id in [agent["agent_id"] for agent in agents]
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error getting discovery info: {e}")
+            return {"error": str(e)}
     
     async def send_message_to_agent(self, target_agent: str, message_type: str, 
                                    payload: Dict[str, Any]) -> bool:

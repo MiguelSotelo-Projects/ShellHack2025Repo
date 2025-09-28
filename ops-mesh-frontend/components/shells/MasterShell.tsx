@@ -33,7 +33,7 @@ export default function MasterShell() {
           </Badge>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <HoverCard>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -77,6 +77,31 @@ export default function MasterShell() {
               <Button asChild variant="outline" className="group">
                 <Link href="/hospital">
                   Open Hospital Dashboard <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            </CardFooter>
+          </HoverCard>
+
+          <HoverCard variant="outline">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" /> Enhanced Dashboard
+              </CardTitle>
+              <CardDescription>Real-time patient management, queue monitoring, and agent status.</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-neutral-600 space-y-2">
+              <p>Advanced dashboard with visual agent monitoring, patient management, and queue operations.</p>
+              <ul className="list-disc pl-5">
+                <li>Visual agent status with activity indicators</li>
+                <li>Patient management and status updates</li>
+                <li>Queue management with dequeue operations</li>
+                <li>Real-time statistics and monitoring</li>
+              </ul>
+            </CardContent>
+            <CardFooter className="justify-end">
+              <Button asChild variant="outline" className="group">
+                <Link href="/enhanced-dashboard">
+                  Open Enhanced Dashboard <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>
             </CardFooter>

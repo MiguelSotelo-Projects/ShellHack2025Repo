@@ -1,4 +1,4 @@
-import { apiClient } from '../api';
+import { api, fetchAPI } from '../api';
 
 export interface QueueEntry {
   id: number;
@@ -36,97 +36,117 @@ export interface QueueEntryResponse {
 
 export class QueueService {
   static async getQueueEntries(): Promise<QueueEntry[]> {
-    const response = await apiClient.get<QueueEntryResponse[]>('/queue/');
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(api.queue.entries);
+      
+      if (!response.success) {
+        throw new Error('Failed to fetch queue entries');
+      }
+      
+      return response.queue_entries || [];
+    } catch (error) {
+      console.error('Error fetching queue entries:', error);
+      throw error;
     }
-    
-    return response.data || [];
   }
 
   static async getQueueEntryById(id: number): Promise<QueueEntry> {
-    const response = await apiClient.get<QueueEntry>(`/queue/${id}`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/${id}`);
+      
+      if (!response) {
+        throw new Error('Queue entry not found');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error fetching queue entry:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Queue entry not found');
-    }
-    
-    return response.data;
   }
 
   static async getQueueEntryByTicket(ticketNumber: string): Promise<QueueEntry> {
-    const response = await apiClient.get<QueueEntry>(`/queue/ticket/${ticketNumber}`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/ticket/${ticketNumber}`);
+      
+      if (!response) {
+        throw new Error('Queue entry not found');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error fetching queue entry by ticket:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Queue entry not found');
-    }
-    
-    return response.data;
   }
 
   static async createWalkIn(walkIn: WalkInRequest): Promise<QueueEntry> {
-    const response = await apiClient.post<QueueEntry>('/queue/walk-in', walkIn);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/walk-in`, {
+        method: 'POST',
+        body: JSON.stringify(walkIn)
+      });
+      
+      if (!response) {
+        throw new Error('Failed to create walk-in');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error creating walk-in:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to create walk-in');
-    }
-    
-    return response.data;
   }
 
   static async callPatient(queueId: number): Promise<{ message: string; ticket_number: string }> {
-    const response = await apiClient.post<{ message: string; ticket_number: string }>(`/queue/${queueId}/call`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/${queueId}/call`, {
+        method: 'POST'
+      });
+      
+      if (!response) {
+        throw new Error('Failed to call patient');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error calling patient:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to call patient');
-    }
-    
-    return response.data;
   }
 
   static async startService(queueId: number): Promise<{ message: string; ticket_number: string }> {
-    const response = await apiClient.post<{ message: string; ticket_number: string }>(`/queue/${queueId}/start`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/${queueId}/start`, {
+        method: 'POST'
+      });
+      
+      if (!response) {
+        throw new Error('Failed to start service');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error starting service:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to start service');
-    }
-    
-    return response.data;
   }
 
   static async completeService(queueId: number): Promise<{ message: string; ticket_number: string }> {
-    const response = await apiClient.post<{ message: string; ticket_number: string }>(`/queue/${queueId}/complete`);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/${queueId}/complete`, {
+        method: 'POST'
+      });
+      
+      if (!response) {
+        throw new Error('Failed to complete service');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error completing service:', error);
+      throw error;
     }
-    
-    if (!response.data) {
-      throw new Error('Failed to complete service');
-    }
-    
-    return response.data;
   }
 }
 

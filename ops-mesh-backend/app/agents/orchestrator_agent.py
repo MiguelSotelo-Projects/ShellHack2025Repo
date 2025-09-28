@@ -7,9 +7,16 @@ Coordinates complex workflows between multiple specialized agents.
 import asyncio
 import logging
 from typing import Dict, Any, List
-from google.adk.agents import Agent
-from google.adk.tools import BaseTool
-from .protocol.agent_protocol import AgentProtocol, MessageType, Priority, ProtocolMessage, FlowOrchestrator
+
+# Try to import Google ADK, fallback to internal implementation
+try:
+    from google.adk.agents import Agent
+    from google.adk.tools import BaseTool
+except ImportError:
+    from .google_adk_fallback import Agent, BaseTool
+
+from .protocol.a2a_protocol import A2AProtocol, A2ATaskRequest, TaskStatus, A2AWorkflowOrchestrator
+from .protocol.agent_protocol import MessageType, Priority, ProtocolMessage
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +24,13 @@ logger = logging.getLogger(__name__)
 class WorkflowOrchestrationTool(BaseTool):
     """Tool for orchestrating complex workflows between agents."""
     
-    def __init__(self, protocol: AgentProtocol):
+    def __init__(self, protocol: A2AProtocol):
         super().__init__(
             name="workflow_orchestration_tool",
             description="Orchestrates complex workflows between multiple agents"
         )
         self.protocol = protocol
-        self.orchestrator = FlowOrchestrator(protocol)
+        self.orchestrator = A2AWorkflowOrchestrator(protocol)
         self.active_workflows = {}
     
     async def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -170,26 +177,24 @@ class WorkflowOrchestrationTool(BaseTool):
         patient_id = emergency_data.get("patient_id")
         
         # Send urgent notifications to all relevant agents
-        await self.protocol.send_message(
+        await self.protocol.send_task_request(
             recipient_id="queue_agent",
-            message_type=MessageType.COORDINATION,
-            payload={
-                "action": "emergency_priority",
+            action="add_to_queue",
+            data={
                 "patient_id": patient_id,
-                "priority": "urgent"
-            },
-            priority=Priority.URGENT
+                "priority": "urgent",
+                "queue_type": "emergency"
+            }
         )
         
-        await self.protocol.send_message(
+        await self.protocol.send_task_request(
             recipient_id="notification_agent",
-            message_type=MessageType.NOTIFICATION,
-            payload={
-                "event": "emergency_alert",
-                "patient_id": patient_id,
-                "message": "EMERGENCY: Immediate attention required"
-            },
-            priority=Priority.URGENT
+            action="send_alert",
+            data={
+                "recipient": f"patient_{patient_id}",
+                "message": "EMERGENCY: Immediate attention required",
+                "level": "critical"
+            }
         )
         
         logger.warning(f"Coordinated emergency response for patient {patient_id}")
@@ -206,72 +211,66 @@ class OrchestratorAgent:
     
     def __init__(self, project_id: str = None):
         self.agent_id = "orchestrator_agent"
-        self.protocol = AgentProtocol(self.agent_id, project_id)
+        self.protocol = A2AProtocol(
+            self.agent_id, 
+            "ops-mesh-backend/agents/orchestrator_agent.json"
+        )
         self.agent = None
         self.orchestration_tool = None
     
     async def initialize(self):
         """Initialize the agent and its tools."""
-        await self.protocol.initialize()
+        await self.protocol.start()
         
         # Create tools
         self.orchestration_tool = WorkflowOrchestrationTool(self.protocol)
         
         # Create ADK agent
-        self.agent = Agent(
-            name="Orchestrator Agent",
-            description="Coordinates complex workflows between multiple agents",
-            tools=[self.orchestration_tool],
-            model="gemini-1.5-flash"
-        )
+        try:
+            self.agent = Agent(
+                name="Orchestrator Agent",
+                description="Coordinates complex workflows between multiple agents",
+                tools=[self.orchestration_tool],
+                model="gemini-1.5-flash"
+            )
+        except TypeError:
+            # Fallback for internal Agent implementation
+            self.agent = Agent(
+                name="Orchestrator Agent",
+                tools=[self.orchestration_tool]
+            )
         
-        # Register message handlers
-        self.protocol.register_handler(MessageType.REQUEST, self._handle_request)
-        self.protocol.register_handler(MessageType.RESPONSE, self._handle_response)
-        self.protocol.register_handler(MessageType.COORDINATION, self._handle_coordination)
+        # Register task handlers
+        self.protocol.register_task_handler("start_patient_flow", self._handle_start_patient_flow)
+        self.protocol.register_task_handler("start_appointment_flow", self._handle_start_appointment_flow)
+        self.protocol.register_task_handler("coordinate_emergency", self._handle_coordinate_emergency)
         
         logger.info("Orchestrator Agent initialized")
     
-    async def _handle_request(self, message: ProtocolMessage):
-        """Handle incoming requests."""
-        logger.info(f"Orchestrator Agent received request: {message.payload}")
-        
-        # Process the request using orchestration tool
-        result = await self.orchestration_tool.execute(message.payload)
-        
-        await self.protocol.send_response(message, result)
+    async def _handle_start_patient_flow(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle start patient flow task."""
+        logger.info(f"Orchestrator Agent handling start_patient_flow: {data}")
+        return await self.orchestration_tool.execute({
+            "action": "start_patient_flow",
+            "patient_data": data.get("patient_data", {}),
+            "flow_type": data.get("flow_type", "walk_in")
+        })
     
-    async def _handle_response(self, message: ProtocolMessage):
-        """Handle responses from other agents."""
-        logger.info(f"Orchestrator Agent received response: {message.payload}")
-        
-        # Process workflow step completion
-        correlation_id = message.correlation_id
-        if correlation_id:
-            # Find the workflow and advance to next step
-            for flow_id, workflow in self.orchestration_tool.active_workflows.items():
-                if correlation_id in str(workflow):
-                    # Advance to next step
-                    current_step = workflow.get("current_step", 0)
-                    if current_step < len(workflow["steps"]) - 1:
-                        next_step = workflow["steps"][current_step + 1]
-                        await self.orchestration_tool.orchestrator.coordinate_step(flow_id, next_step)
-                    else:
-                        # Workflow completed
-                        await self.orchestration_tool.orchestrator.complete_flow(flow_id, message.payload)
+    async def _handle_start_appointment_flow(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle start appointment flow task."""
+        logger.info(f"Orchestrator Agent handling start_appointment_flow: {data}")
+        return await self.orchestration_tool.execute({
+            "action": "start_appointment_flow",
+            "appointment_data": data.get("appointment_data", {})
+        })
     
-    async def _handle_coordination(self, message: ProtocolMessage):
-        """Handle coordination messages."""
-        logger.info(f"Orchestrator Agent received coordination: {message.payload}")
-        
-        # Handle coordination logic here
-        flow_id = message.payload.get("flow_id")
-        step_data = message.payload.get("data", {})
-        
-        # Process coordination step
-        if step_data.get("action") == "orchestrate_workflow":
-            result = await self.orchestration_tool.execute(step_data)
-            logger.info(f"Processed coordination step: {result}")
+    async def _handle_coordinate_emergency(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle coordinate emergency task."""
+        logger.info(f"Orchestrator Agent handling coordinate_emergency: {data}")
+        return await self.orchestration_tool.execute({
+            "action": "coordinate_emergency",
+            "emergency_data": data.get("emergency_data", {})
+        })
     
     async def start(self):
         """Start the agent."""
@@ -280,10 +279,9 @@ class OrchestratorAgent:
         
         logger.info("Starting Orchestrator Agent...")
         
-        # Start listening for messages
-        await self.protocol.start_listening()
+        logger.info("Orchestrator Agent started")
     
     async def stop(self):
         """Stop the agent."""
-        await self.protocol.stop_listening()
+        await self.protocol.stop()
         logger.info("Orchestrator Agent stopped")

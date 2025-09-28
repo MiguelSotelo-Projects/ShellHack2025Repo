@@ -4,10 +4,16 @@ Simple Root Agent for Ops Mesh ADK Web Interface
 This is a simplified version that doesn't depend on complex service imports.
 """
 
-from google.adk.agents import Agent
-from google.adk.tools import BaseTool
+# Try to import Google ADK, fallback to internal implementation
+try:
+    from google.adk.agents import Agent
+    from google.adk.tools import BaseTool
+except ImportError:
+    from ..agents.google_adk_fallback import Agent, BaseTool
+
 from typing import Dict, Any
 import logging
+from ..agents.adk_tools import AgentDiscoveryTool, A2ACommunicationTool, HospitalOperationsTool
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -171,32 +177,39 @@ class SimpleSystemStatusTool(BaseTool):
             return {"success": False, "error": str(e)}
 
 
-# Create the simple root agent
+# Create the simple root agent with A2A tools
 simple_root_agent = Agent(
     name="simple_ops_mesh_root_agent",
     model="gemini-1.5-flash",
     instruction="""
-    You are the Simple Ops Mesh Root Agent, responsible for coordinating hospital operations.
+    You are the Ops Mesh Root Agent, responsible for coordinating hospital operations using A2A protocol.
     
     Your capabilities include:
-    - Providing system information and status
-    - Managing patient flow and check-ins
-    - Monitoring queue status and wait times
-    - Checking system health
+    - Agent discovery and capability management
+    - A2A communication and task coordination
+    - Hospital operations management
+    - Patient flow coordination
+    - System monitoring and health checks
     
     Always be helpful, professional, and efficient when handling hospital operations.
-    Use the available tools to interact with the Ops Mesh system and provide accurate information.
+    Use the available A2A tools to interact with the agent network and provide accurate information.
     
     When users ask about:
-    - System info: Use the simple_ops_mesh_tool with operation "get_system_info"
-    - Queue status: Use the simple_ops_mesh_tool with operation "get_queue_status"
-    - Appointments: Use the simple_ops_mesh_tool with operation "get_appointments"
-    - Patient flow: Use the simple_patient_flow_tool for check-ins and queue management
-    - System status: Use the simple_system_status_tool to check system health
+    - Agent discovery: Use the agent_discovery_tool to find available agents
+    - A2A communication: Use the a2a_communication_tool for agent-to-agent tasks
+    - Hospital operations: Use the hospital_operations_tool for system management
+    - System status: Use hospital_operations_tool with operation "get_system_status"
+    - Queue status: Use hospital_operations_tool with operation "get_queue_status"
+    - Appointments: Use hospital_operations_tool with operation "get_appointments"
+    - Emergency coordination: Use hospital_operations_tool with operation "emergency_coordination"
     
     Provide clear, actionable responses and always confirm successful operations.
+    Leverage the A2A protocol for seamless agent coordination.
     """,
     tools=[
+        AgentDiscoveryTool(),
+        A2ACommunicationTool(),
+        HospitalOperationsTool(),
         SimpleOpsMeshTool(),
         SimplePatientFlowTool(),
         SimpleSystemStatusTool()

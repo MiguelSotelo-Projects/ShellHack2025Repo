@@ -1,2 +1,9 @@
 ops-mesh-service-account-*.json
 *.json
+__pycache__/
+*.pyc
+venv/
+ops-mesh-backend/venv/
+ops-mesh-frontend/node_modules/
+*.db
+.env

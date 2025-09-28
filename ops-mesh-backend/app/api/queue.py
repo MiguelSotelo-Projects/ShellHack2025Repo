@@ -73,6 +73,74 @@ def get_queue_entries(
     return result
 
 
+@router.get("/status")
+def get_queue_status(db: Session = Depends(get_db)):
+    """Get current queue status and statistics"""
+    try:
+        from sqlalchemy import func
+        # Get queue statistics
+        waiting_count = db.query(QueueEntry).filter(QueueEntry.status == QueueStatus.WAITING).count()
+        in_progress_count = db.query(QueueEntry).filter(QueueEntry.status == QueueStatus.IN_PROGRESS).count()
+        completed_count = db.query(QueueEntry).filter(QueueEntry.status == QueueStatus.COMPLETED).count()
+        
+        # Calculate average wait time
+        avg_wait_result = db.query(func.avg(QueueEntry.estimated_wait_time)).filter(
+            QueueEntry.status == QueueStatus.WAITING
+        ).scalar()
+        
+        average_wait_time = int(avg_wait_result) if avg_wait_result else 0
+        
+        return {
+            "success": True,
+            "queue_status": {
+                "waiting": waiting_count,
+                "in_progress": in_progress_count,
+                "completed": completed_count,
+                "total_waiting": waiting_count,
+                "average_wait_time": average_wait_time
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/entries")
+def get_queue_entries_with_patients(db: Session = Depends(get_db)):
+    """Get all queue entries with patient information"""
+    try:
+        queue_entries = db.query(QueueEntry).join(Patient, QueueEntry.patient_id == Patient.id, isouter=True).all()
+        
+        result = []
+        for entry in queue_entries:
+            result.append({
+                "id": entry.id,
+                "ticket_number": entry.ticket_number,
+                "patient_id": entry.patient_id,
+                "queue_type": entry.queue_type.value,
+                "status": entry.status.value,
+                "priority": entry.priority.value,
+                "reason": entry.reason,
+                "estimated_wait_time": entry.estimated_wait_time,
+                "actual_wait_time": entry.actual_wait_time,
+                "called_at": entry.called_at.isoformat() if entry.called_at else None,
+                "started_at": entry.started_at.isoformat() if entry.started_at else None,
+                "completed_at": entry.completed_at.isoformat() if entry.completed_at else None,
+                "created_at": entry.created_at.isoformat(),
+                "patient": {
+                    "id": entry.patient.id,
+                    "first_name": entry.patient.first_name,
+                    "last_name": entry.patient.last_name,
+                    "phone": entry.patient.phone,
+                    "email": entry.patient.email,
+                    "medical_record_number": entry.patient.medical_record_number
+                } if entry.patient else None
+            })
+        
+        return {"success": True, "queue_entries": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/{queue_id}", response_model=QueueEntrySchema)
 def get_queue_entry_by_id(
     queue_entry: QueueEntry = Depends(get_queue_entry)
@@ -282,3 +350,66 @@ def complete_service(
     db.commit()
     
     return {"message": "Service completed successfully", "ticket_number": queue_entry.ticket_number}
+
+
+@router.post("/call-next")
+def call_next_patient(db: Session = Depends(get_db)):
+    """Call the next patient in queue"""
+    try:
+        # Find next patient by priority and arrival time
+        next_patient = db.query(QueueEntry).filter(
+            QueueEntry.status == QueueStatus.WAITING
+        ).order_by(
+            QueueEntry.priority.desc(),  # Urgent first
+            QueueEntry.created_at.asc()  # Then by arrival time
+        ).first()
+        
+        if not next_patient:
+            return {"success": False, "error": "No patients in queue"}
+        
+        # Update patient status
+        next_patient.status = QueueStatus.CALLED
+        next_patient.called_at = datetime.utcnow()
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "patient_id": next_patient.patient_id,
+            "ticket_number": next_patient.ticket_number,
+            "message": "Patient called successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/entries/{entry_id}/status")
+def update_queue_entry_status(
+    entry_id: int,
+    status_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Update queue entry status"""
+    try:
+        entry = db.query(QueueEntry).filter(QueueEntry.id == entry_id).first()
+        if not entry:
+            raise HTTPException(status_code=404, detail="Queue entry not found")
+        
+        new_status = status_data.get("status")
+        if new_status:
+            entry.status = QueueStatus(new_status)
+            
+            # Update timestamps based on status
+            if new_status == "in_progress" and not entry.started_at:
+                entry.started_at = datetime.utcnow()
+                if entry.created_at:
+                    wait_time = (datetime.utcnow() - entry.created_at).total_seconds() / 60
+                    entry.actual_wait_time = int(wait_time)
+            elif new_status == "completed" and not entry.completed_at:
+                entry.completed_at = datetime.utcnow()
+        
+        db.commit()
+        
+        return {"success": True, "message": "Queue entry status updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
