@@ -1,4 +1,4 @@
-#!/home/masot/ShellyHacksOP/ShellHack2025Repo/ops-mesh-backend/venv/bin/python3
+#!/Users/danielreyes/alpha/ShellHack2025Repo/ops-mesh-backend/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

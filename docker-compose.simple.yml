@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ops-mesh-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: shellhacks2025-demo-simple
+    ports:
+      - "8000:8000"  # Backend API
+      - "3000:3000"  # Frontend
+    volumes:
+      - ./data:/app/data  # Persist database data
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite:///./data/ops_mesh.db
+      - API_V1_STR=/api/v1
+      - PROJECT_NAME=Ops Mesh Backend
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3001","http://127.0.0.1:3000","http://127.0.0.1:3001"]
+      - DEBUG=false
+      - RELOAD=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ops-mesh-network
+
+networks:
+  ops-mesh-network:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local
