@@ -6,6 +6,13 @@ A comprehensive hospital operations management system demonstrating Agent-to-Age
 
 ### 🐳 Docker Setup (Recommended - No Dependencies!)
 
+**For New Collaborators:**
+```bash
+git clone https://github.com/MiguelSotelo-Projects/ShellHack2025Repo.git
+cd ShellHack2025Repo
+docker-compose -f docker-compose.simple.yml up --build
+```
+
 **Windows:**
 ```cmd
 run_docker_demo.bat
@@ -18,7 +25,7 @@ run_docker_demo.bat
 
 **Docker Compose:**
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.simple.yml up --build
 ```
 
 ### 🔧 Local Setup (Requires Python & Node.js)
