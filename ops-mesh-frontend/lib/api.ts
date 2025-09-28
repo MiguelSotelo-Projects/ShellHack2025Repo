@@ -20,18 +20,18 @@ export const api = {
   
   // Patient endpoints
   patients: {
-    list: `${API_BASE_URL}/api/v1/patients/list`,
-    create: `${API_BASE_URL}/api/v1/patients/create`,
+    list: `${API_BASE_URL}/api/v1/patients/`,
+    create: `${API_BASE_URL}/api/v1/patients/`,
     update: (id: string) => `${API_BASE_URL}/api/v1/patients/${id}`,
     get: (id: string) => `${API_BASE_URL}/api/v1/patients/${id}`,
   },
   
   // Queue endpoints
   queue: {
-    status: `${API_BASE_URL}/api/v1/queue/status`,
-    entries: `${API_BASE_URL}/api/v1/queue/entries`,
+    status: `${API_BASE_URL}/api/v1/queue`,
+    entries: `${API_BASE_URL}/api/v1/queue`,
     callNext: `${API_BASE_URL}/api/v1/queue/call-next`,
-    updateStatus: (id: string) => `${API_BASE_URL}/api/v1/queue/entries/${id}/status`,
+    updateStatus: (id: string) => `${API_BASE_URL}/api/v1/queue/${id}/status`,
   },
   
   // Dashboard endpoints

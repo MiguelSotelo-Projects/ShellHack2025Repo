@@ -5,7 +5,8 @@ import uvicorn
 
 from .core.config import settings
 from .core.database import engine, Base
-from .api import appointments, patients, queue, dashboard, walkin, checkin, agents
+from .api import appointments, patients, queue, dashboard, walkin, checkin, agents, hybrid_agents, google_adk, vertex_ai
+from .agents.google_adk import Agent, A2AServer, RemoteA2aAgent, AgentDiscovery
 from .websockets import dashboard_ws
 
 # Create database tables
@@ -69,6 +70,24 @@ app.include_router(
     agents.router,
     prefix=f"{settings.api_v1_str}/agents",
     tags=["agents"]
+)
+
+app.include_router(
+    hybrid_agents.router,
+    prefix=f"{settings.api_v1_str}/hybrid-agents",
+    tags=["hybrid-agents"]
+)
+
+app.include_router(
+    google_adk.router,
+    prefix=f"{settings.api_v1_str}/google-adk",
+    tags=["google-adk"]
+)
+
+app.include_router(
+    vertex_ai.router,
+    prefix=f"{settings.api_v1_str}/vertex-ai",
+    tags=["vertex-ai"]
 )
 
 # Include WebSocket routers

@@ -1,0 +1,39 @@
+2025-09-27 22:59:23,324 - __main__ - INFO - 🚀 Starting Google ADK Hospital Agents...
+2025-09-27 22:59:23,324 - __main__ - INFO - ============================================================
+2025-09-27 22:59:23,324 - app.agents.a2a_server - INFO - 🚀 Starting A2A Server on 0.0.0.0:8000
+2025-09-27 22:59:23,342 - app.agents.a2a_server - INFO - 🚀 Starting Hospital A2A Server...
+2025-09-27 22:59:23,343 - app.agents.google_adk.a2a - INFO - Initialized A2A Server for agent: frontdesk_agent
+2025-09-27 22:59:23,343 - app.agents.google_adk.agent - INFO - ✅ ADK Agent frontdesk_agent started successfully
+2025-09-27 22:59:23,343 - app.agents.hospital_agents.frontdesk_agent - INFO - 🚀 FrontDesk Agent started: frontdesk_agent
+2025-09-27 22:59:23,343 - app.agents.a2a_server - INFO - 🚀 Started frontdesk agent on port 8001
+2025-09-27 22:59:23,344 - app.agents.google_adk.a2a - INFO - Initialized A2A Server for agent: queue_agent
+2025-09-27 22:59:23,344 - app.agents.google_adk.agent - INFO - ✅ ADK Agent queue_agent started successfully
+2025-09-27 22:59:23,344 - app.agents.hospital_agents.queue_agent - INFO - 🚀 Queue Agent started: queue_agent
+2025-09-27 22:59:23,344 - app.agents.a2a_server - INFO - 🚀 Started queue agent on port 8002
+2025-09-27 22:59:23,344 - app.agents.a2a_server - INFO - 📝 Registered frontdesk with discovery service
+2025-09-27 22:59:23,344 - app.agents.a2a_server - INFO - 📝 Registered queue with discovery service
+2025-09-27 22:59:23,344 - app.agents.a2a_server - INFO - ✅ All hospital agents started successfully
+2025-09-27 22:59:23,344 - app.agents.google_adk.agent - WARNING - Agent frontdesk_agent is already running
+2025-09-27 22:59:23,344 - app.agents.hospital_agents.frontdesk_agent - INFO - 🚀 FrontDesk Agent started: frontdesk_agent
+2025-09-27 22:59:23,344 - app.agents.google_adk.a2a - INFO - 🚀 A2A Server started on 0.0.0.0:8001
+2025-09-27 22:59:23,344 - app.agents.google_adk.agent - WARNING - Agent queue_agent is already running
+2025-09-27 22:59:23,344 - app.agents.hospital_agents.queue_agent - INFO - 🚀 Queue Agent started: queue_agent
+2025-09-27 22:59:23,344 - app.agents.google_adk.a2a - INFO - 🚀 A2A Server started on 0.0.0.0:8002
+2025-09-27 22:59:23,348 - app.agents.a2a_server - INFO - 🛑 Stopping Hospital A2A Server...
+2025-09-27 22:59:23,348 - app.agents.google_adk.agent - INFO - 🛑 ADK Agent frontdesk_agent stopped
+2025-09-27 22:59:23,348 - app.agents.hospital_agents.frontdesk_agent - INFO - 🛑 FrontDesk Agent stopped: frontdesk_agent
+2025-09-27 22:59:23,348 - app.agents.google_adk.a2a - INFO - 🛑 A2A Server stopped
+2025-09-27 22:59:23,348 - app.agents.a2a_server - INFO - 🛑 Stopped frontdesk server
+2025-09-27 22:59:23,349 - app.agents.google_adk.agent - INFO - 🛑 ADK Agent queue_agent stopped
+2025-09-27 22:59:23,349 - app.agents.hospital_agents.queue_agent - INFO - 🛑 Queue Agent stopped: queue_agent
+2025-09-27 22:59:23,349 - app.agents.google_adk.a2a - INFO - 🛑 A2A Server stopped
+2025-09-27 22:59:23,349 - app.agents.a2a_server - INFO - 🛑 Stopped queue server
+2025-09-27 22:59:23,349 - app.agents.google_adk.agent - WARNING - Agent frontdesk_agent is not running
+2025-09-27 22:59:23,349 - app.agents.hospital_agents.frontdesk_agent - INFO - 🛑 FrontDesk Agent stopped: frontdesk_agent
+2025-09-27 22:59:23,349 - app.agents.a2a_server - INFO - 🛑 Stopped frontdesk agent
+2025-09-27 22:59:23,349 - app.agents.google_adk.agent - WARNING - Agent queue_agent is not running
+2025-09-27 22:59:23,349 - app.agents.hospital_agents.queue_agent - INFO - 🛑 Queue Agent stopped: queue_agent
+2025-09-27 22:59:23,349 - app.agents.a2a_server - INFO - 🛑 Stopped queue agent
+2025-09-27 22:59:23,352 - app.agents.google_adk.discovery - INFO - 🔌 Agent discovery service closed
+2025-09-27 22:59:23,353 - app.agents.a2a_server - INFO - 🛑 Hospital A2A Server stopped
+2025-09-27 22:59:23,353 - __main__ - INFO - 🛑 Google ADK agents stopped

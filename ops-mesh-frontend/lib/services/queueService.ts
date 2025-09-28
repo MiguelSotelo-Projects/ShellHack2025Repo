@@ -39,11 +39,8 @@ export class QueueService {
     try {
       const response = await fetchAPI(api.queue.entries);
       
-      if (!response.success) {
-        throw new Error('Failed to fetch queue entries');
-      }
-      
-      return response.queue_entries || [];
+      // The backend returns an array directly, not wrapped in a success object
+      return Array.isArray(response) ? response : [];
     } catch (error) {
       console.error('Error fetching queue entries:', error);
       throw error;
@@ -145,6 +142,23 @@ export class QueueService {
       return response;
     } catch (error) {
       console.error('Error completing service:', error);
+      throw error;
+    }
+  }
+
+  static async dequeuePatient(queueId: number): Promise<{ message: string; ticket_number: string }> {
+    try {
+      const response = await fetchAPI(`${api.queue.entries}/${queueId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response) {
+        throw new Error('Failed to dequeue patient');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error dequeuing patient:', error);
       throw error;
     }
   }

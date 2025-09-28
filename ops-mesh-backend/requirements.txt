@@ -24,6 +24,9 @@ protobuf
 # Agent Protocol Dependencies
 websockets
 aiohttp
-# A2A Protocol Dependencies
-a2a-protocol==0.1.0
-# Note: google-adk is implemented internally as it's not available as a public package
+# Google ADK and A2A Protocol Dependencies
+# Note: These packages are not publicly available yet, but we provide a complete internal implementation
+# google-adk>=1.0.0  # Not publicly available
+# google-a2a>=1.0.0  # Not publicly available  
+# a2a-protocol>=1.0.0  # Not publicly available
+# Our internal implementation provides full ADK/A2A functionality
